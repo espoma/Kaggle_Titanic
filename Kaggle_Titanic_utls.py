@@ -22,8 +22,8 @@ from sklearn.model_selection import cross_val_score
 
 
 def base_pip(model, data, labels, imputer_s='median', option='train_test', 
-    param_grid=None, cv=3, numeric_features = ['Age', 'SibSp', 'Fare', 'Parch'], 
-    categorical_features = ['Embarked', 'Sex', 'Pclass', 'Title']):
+    param_grid=None, cv=3, numeric_features = ['Age', 'SibSp', 'Fare', 'Parch'],
+    categorical_features = ['Embarked', 'Sex', 'Pclass', 'Title'], X_unknown=None):
     # Pipeline + model or pipeline + grid search CV
     # Returns (score on train, score on test) or (best_params, best_score, best_estimator)
     
@@ -61,7 +61,6 @@ def base_pip(model, data, labels, imputer_s='median', option='train_test',
     X_train_tr = pipeline.fit_transform(X_train)
     X_test_tr = pipeline.transform(X_test)
 
-    print(X_train_tr.shape)
     
     clf = model
     
@@ -89,13 +88,9 @@ def base_pip(model, data, labels, imputer_s='median', option='train_test',
         best_estimator = gscv.best_estimator_
         #cv_results = gscv.cv_results_
 
-        return best_params, best_score, best_estimator
-
-
-
-    elif (option == 'prediction'):
-
-        -----------
+        return {'best_param': best_params, 'best_score': best_score, 
+        'best_estimator': best_estimator, 'pipeline': pipeline, 
+        'pipeline_params': pipeline.get_params()}
 
 
     else:
