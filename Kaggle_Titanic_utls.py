@@ -20,20 +20,21 @@ from sklearn.model_selection import cross_val_score
 
 
 
-def base_pip(model, data, labels, imputer_s='median'):
+def base_pip(model, data, labels, imputer_s='median', option='train_test', param_grid={}):
     # Pipeline + model
     # Returns (score on train, score on test)
     numeric_features = ['Age', 'SibSp', 'Fare', 'Parch']
     
+    # Mutual bit
     if (imputer_s == 'median'):
-        imputer = SimpleImputer(strategy='median')
+            imputer = SimpleImputer(strategy='median')
     elif (imputer_s == 'mean'):
         imputer = SimpleImputer(strategy='mean')
     elif (imputer_s == 'zeros'):
         imputer = SimpleImputer(strategy='constant', fill_value=0)
     elif (imputer_s == 'function'):
         imputer = IterativeImputer()
-        
+            
     numeric_transformer = Pipeline(steps=[
         ('imputer', imputer),
         ('scaler', StandardScaler())])
@@ -46,17 +47,43 @@ def base_pip(model, data, labels, imputer_s='median'):
             ('num', numeric_transformer, numeric_features),
             ('cat', categorical_transformer, categorical_features)])
 
-    # Append classifier to preprocessing pipeline.
-    # Now we have a full prediction pipeline.
-    clf = Pipeline(steps=[('preprocessor', preprocessor),
-                          ('classifier', model)])
+
+    pipeline = Pipeline(steps=[('preprocessor', preprocessor)])
+
+
+    # clf = Pipeline(steps=[('preprocessor', preprocessor), 
+    #     ('classifier', model)])
 
     
     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.15,
-                                                                random_state=0, stratify=labels)
+                                                                    random_state=0, stratify=labels)
 
+    X_train_tr = pipeline.fit_transform(X_train)
+    X_test_tr = pipeline.transform(X_test)
     
-    clf.fit(X_train, y_train)
-    score_train, score_test = clf.score(X_train, y_train), clf.score(X_test, y_test)
+    clf = model
     
-    return score_train, score_test
+    # Baseline
+    if (option == 'train_test'):            
+    
+        clf.fit(X_train_tr, y_train)
+        score_train, score_test = clf.score(X_train_tr, y_train), clf.score(X_test_tr, y_test)
+    
+        return score_train, score_test
+
+
+    # Grid Search
+    elif (option == 'grid_search'):
+        
+        gscv = GridSearchCV(clf, cv=3, n_jobs=-3, param_grid=param_grid, scoring='accuracy')
+        gscv.fit(X_train_tr, y_train)
+        #gscv.score(X_train, y_train)
+        best_params = gscv.best_params_
+        best_score = gscv.best_score_
+
+        return best_params, best_score
+
+    else:
+
+        raise ValueError("No valid option provided, insert 'test_train' or 'grid_search'")
+        return 0
