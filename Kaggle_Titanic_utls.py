@@ -50,10 +50,6 @@ def base_pip(model, data, labels, imputer_s='median', option='train_test', param
 
     pipeline = Pipeline(steps=[('preprocessor', preprocessor)])
 
-
-    # clf = Pipeline(steps=[('preprocessor', preprocessor), 
-    #     ('classifier', model)])
-
     
     X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.15,
                                                                     random_state=0, stratify=labels)
@@ -63,6 +59,9 @@ def base_pip(model, data, labels, imputer_s='median', option='train_test', param
     
     clf = model
     
+
+
+
     # Baseline
     if (option == 'train_test'):            
     
@@ -72,16 +71,21 @@ def base_pip(model, data, labels, imputer_s='median', option='train_test', param
         return score_train, score_test
 
 
+
+
+
     # Grid Search
     elif (option == 'grid_search'):
         
         gscv = GridSearchCV(clf, cv=3, n_jobs=-3, param_grid=param_grid, scoring='accuracy')
         gscv.fit(X_train_tr, y_train)
-        #gscv.score(X_train, y_train)
         best_params = gscv.best_params_
         best_score = gscv.best_score_
 
         return best_params, best_score
+
+
+
 
     else:
 
