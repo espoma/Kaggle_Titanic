@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from pandas.plotting import scatter_matrix
 
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -82,7 +83,8 @@ def preprocessing(data_num, data_cat, imputer_num='median',
 	else:
 		raise ValueError('Invalid option for the categorical transformer')
 
-	data_ = pd.concat([data_num_scaled, data_cat_dummy])
+	data_ = pd.concat([data_num_scaled, data_cat_dummy], axis=1, join='inner')
+
 
 	return data_, value_num, value_cat
 
@@ -95,14 +97,15 @@ def test_preprocessing(test, value_num, value_cat, scaler=StandardScaler(), tran
 	test_num.fillna(value_num, inplace=True)
 	test_cat.fillna(value_cat, inplace=True)
 
-	test_num_scaled = scaler.fit_transform(test_num)
+	test_num_scaled = pd.DataFrame(scaler.fit_transform(test_num))
 
 	if (transformer == 'dummies'):
-		test_cat_dummies = pd.get_dummies(test_cat)
+		test_cat_dummy = pd.get_dummies(test_cat)
 	else:
 		raise ValueError('Invalid option for the categorical test transformer')
 
-	test_ = pd.concat([test_num_scaled, test_cat_dummy])
+
+	test_ = pd.concat([test_num_scaled, test_cat_dummy], axis=1, join='inner')
 
 	return test_
 
@@ -111,7 +114,7 @@ def test_preprocessing(test, value_num, value_cat, scaler=StandardScaler(), tran
 def model_trial(data, labels, model):
 
 	X_train, X_test, y_train, y_test = train_test_split(data, labels,
-                            random_state=1, test_size=0.25, stratify=labels)
+                            random_state=123, test_size=0.25, stratify=labels)
 
 	model.fit(X_train, y_train)
 	dict_ = {'train_score': model.score(X_train, y_train),
