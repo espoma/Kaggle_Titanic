@@ -33,6 +33,11 @@ class color:
    END = '\033[0m'
 
 
+def get_title(data, col='Name'):
+    
+    title =  data[col].apply(lambda x:x.split(',')[1].split('.')[0].strip())
+    
+    return title
 
 
 def find_features_by_type(data):
@@ -50,8 +55,8 @@ def get_features_by_type(data):
 	return data.loc[:, num], data.loc[:, cat]
 
 
-def preprocessing(data_num, data_cat, imputer_num='median', scaler=StandardScaler(),
-	imputer_cat='mode', transformer='dummies'):
+def preprocessing(data_num, data_cat, imputer_num='median',
+				scaler=StandardScaler(), imputer_cat='mode', transformer='dummies'):
 
 	if (imputer_num == 'median'):
 		value_num = data_num.median()
@@ -70,16 +75,36 @@ def preprocessing(data_num, data_cat, imputer_num='median', scaler=StandardScale
 	data_num.fillna(value_num, inplace=True)
 	data_cat.fillna(value_cat, inplace=True)
 
-	data_num_scaled = scaler.fit_transform(data_num)
+	data_num_scaled = pd.DataFrame(scaler.fit_transform(data_num))
 
 	if (transformer == 'dummies'):
 		data_cat_dummy = pd.get_dummies(data_cat)
 	else:
 		raise ValueError('Invalid option for the categorical transformer')
 
-	data_ = np.c_[data_num_scaled, data_cat_dummy]
+	data_ = pd.concat([data_num_scaled, data_cat_dummy])
 
-	return data_
+	return data_, value_num, value_cat
+
+
+
+def test_preprocessing(test, value_num, value_cat, scaler=StandardScaler(), transformer='dummies'):
+
+	test_num, test_cat = get_features_by_type(test)
+
+	test_num.fillna(value_num, inplace=True)
+	test_cat.fillna(value_cat, inplace=True)
+
+	test_num_scaled = scaler.fit_transform(test_num)
+
+	if (transformer == 'dummies'):
+		test_cat_dummies = pd.get_dummies(test_cat)
+	else:
+		raise ValueError('Invalid option for the categorical test transformer')
+
+	test_ = pd.concat([test_num_scaled, test_cat_dummy])
+
+	return test_
 
 
 
