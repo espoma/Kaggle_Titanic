@@ -34,6 +34,19 @@ class color:
    END = '\033[0m'
 
 
+
+def prepare_test_data(test, columns_to_drop=['Cabin', 'Ticket', 'PassengerId']):
+
+	test_ids = test.PassengerId
+	test_ = test.drop(columns_to_drop, axis=1)
+
+	test_title = get_title(test_)
+	test_['Title'] = test_title
+	test_.drop('Name', axis=1, inplace=True)
+
+	return test_, test_ids
+
+
 def get_title(data, col='Name'):
     
     title =  data[col].apply(lambda x:x.split(',')[1].split('.')[0].strip())
