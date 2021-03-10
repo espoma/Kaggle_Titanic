@@ -17,6 +17,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import RandomForestClassifier
 #from sklearn.metrics import accuracy, make_scorer
 
 
@@ -69,7 +70,9 @@ def get_features_by_type(data):
 	return data.loc[:, num], data.loc[:, cat]
 
 
-def preprocessing(data_num, data_cat, imputer_num='median',
+
+
+def preprocessing(data_num, data_cat, imputer_num='median', scaling='yes',
 				scaler=StandardScaler(), imputer_cat='mode', transformer='dummies'):
 
 	if (imputer_num == 'median'):
@@ -86,8 +89,11 @@ def preprocessing(data_num, data_cat, imputer_num='median',
 	else:
 		raise ValueError('Invalid option for categorical imputer')
 
+
 	data_num.fillna(value_num, inplace=True)
 	data_cat.fillna(value_cat, inplace=True)
+
+
 
 	data_num_scaled = pd.DataFrame(scaler.fit_transform(data_num))
 
@@ -100,6 +106,7 @@ def preprocessing(data_num, data_cat, imputer_num='median',
 
 
 	return data_, value_num, value_cat
+
 
 
 
