@@ -9,3 +9,6 @@ A problem in Machine Learning - finding a suitable model to accurately predict w
 5. gender_submission.csv - an example of what a submission file should look like. 
 
 This is originally a Kaggle competition ([link](https://www.kaggle.com/c/titanic/overview)).
+
+## Acknowledgements
+Thanks to [Alessandro Dell'Orto](https://github.com/lept1), for useful discussions about this dataset and more.
