@@ -11,7 +11,7 @@ A problem in Machine Learning - finding a suitable model to accurately predict w
 This is originally a Kaggle competition ([link](https://www.kaggle.com/c/titanic/overview)).
 
 ## Note
-The folder Kaggle_Titanic in this repo contains code from [Alessandro Dell'Orto](https://github.com/lept1). All the remaining code is from myself.
+The folder Kaggle_Titanic within this repo contains code from [Alessandro Dell'Orto](https://github.com/lept1). All the remaining code is from myself.
 
 ## Acknowledgements
 Thanks to [Alessandro Dell'Orto](https://github.com/lept1), for useful discussions about this dataset and more.
