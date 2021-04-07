@@ -7,7 +7,7 @@ import pickle as pkl
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.experimental import enable_iterative_imputer  
-from sklearn.impute import SimpleImputer, IterativeImputer
+from sklearn.impute import SimpleImputer, IterativeImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, RobustScaler
 from sklearn.linear_model import LogisticRegression, Perceptron
 from sklearn.tree import DecisionTreeClassifier, plot_tree
@@ -17,8 +17,10 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
-from sklearn.ensemble import RandomForestClassifier, \
-BaggingClassifier, VotingClassifier, ExtraTreesClassifier
+from sklearn.ensemble import RandomForestClassifier,\
+BaggingClassifier, VotingClassifier, ExtraTreesClassifier,\
+AdaBoostClassifier, GradientBoostingClassifier
+
 
 
 #from sklearn.metrics import accuracy, make_scorer
@@ -43,116 +45,88 @@ class color:
 
 def prepare_test_data(test, columns_to_drop=['Cabin', 'Ticket', 'PassengerId']):
 
-	test_ids = test.PassengerId
-	test_ = test.drop(columns_to_drop, axis=1)
+    test_ids = test.PassengerId
+    test_ = test.drop(columns_to_drop, axis=1)
 
-	test_title = get_title(test_)
-	test_['Title'] = test_title
-	test_.drop('Name', axis=1, inplace=True)
+    test_title = get_title(test_)
+    test_['Title'] = test_title
+    test_.drop('Name', axis=1, inplace=True)
 
-	return test_, test_ids
+    return test_, test_ids
 
 
 def get_title(data, col='Name'):
     
-    title =  data[col].apply(lambda x:x.split(',')[1].split('.')[0].strip())
-    
+    try:
+        title = data[col].apply(lambda x:x.split(',')[1].split('.')[0].strip())
+    except:
+        print('Name not present') 
+        return 0
+
     return title
 
 
 def find_features_by_type(data):
 
-	numerical_features = list(data.columns[data.dtypes != 'object'])
-	categorical_features = list(data.columns[data.dtypes == 'object'])
+    numerical_features = list(data.columns[data.dtypes != 'object'])
+    categorical_features = list(data.columns[data.dtypes == 'object'])
 
-	return numerical_features, categorical_features
+    return numerical_features, categorical_features
 
 
 def get_features_by_type(data):
 
-	num, cat = find_features_by_type(data)
+    num, cat = find_features_by_type(data)
 
-	return data.loc[:, num], data.loc[:, cat]
+    return data.loc[:, num], data.loc[:, cat]
 
 
 
 
 def preprocessing(data_num, data_cat, imputer_num='median',
-				scaler=StandardScaler(), imputer_cat='mode', transformer='dummies'):
+                scaler=StandardScaler(), imputer_cat='mode', transformer='dummies'):
 
-	if (imputer_num == 'median'):
-		value_num = data_num.median()
-	elif (imputer_num == 'mean'):
-		value_num = data_num.mean()
-	elif (imputer_num == 'zero'):
-		value_num = 0
-	else:
-		raise ValueError('Invalid option for numerical imputer')
-
-	if (imputer_cat == 'mode'):
-		value_cat = data_cat.mode()
-	else:
-		raise ValueError('Invalid option for categorical imputer')
+    if (imputer_num == 'median'):
+        value_num = data_num.median()
+    elif (imputer_num == 'mean'):
+        value_num = data_num.mean()
+    elif (imputer_num == 'zero'):
+        value_num = 0
+    else:
+        raise ValueError('Invalid option for numerical imputer')
 
 
-	data_num.fillna(value_num, inplace=True)
-	data_cat.fillna(value_cat, inplace=True)
+    if (imputer_cat == 'mode'):
+        value_cat = data_cat.mode()
+    elif (imputer_cat == None) or (imputer_cat == 'no'):
+        pass
+    else:
+        raise ValueError('Invalid option for categorical imputer')
 
 
-	if (scaler == 'no') or (scaler == None):
-		pass
-	else:
-		data_num = pd.DataFrame(scaler.fit_transform(data_num))
+    data_num.fillna(value_num, inplace=True)
+    data_cat.fillna(value_cat, inplace=True)
 
 
-
-	if (transformer == 'no') or (transformer == None): 
-		pass
-	elif (transformer == 'dummies'):
-		data_cat = pd.get_dummies(data_cat)
-	else:
-		raise ValueError('Invalid option for the categorical transformer')
-
-
-	data_ = pd.concat([data_num, data_cat], axis=1, join='inner')
-
-
-	return data_, value_num, value_cat
+    if (scaler == 'no') or (scaler == None):
+        pass
+    else:
+        data_num = pd.DataFrame(scaler.fit_transform(data_num))
 
 
 
-
-def test_preprocessing(test, value_num, value_cat, scaler=StandardScaler(), transformer='dummies'):
-
-	test_num, test_cat = get_features_by_type(test)
-
-	test_num.fillna(value_num, inplace=True)
-	test_cat.fillna(value_cat, inplace=True)
-
-	test_num_scaled = pd.DataFrame(scaler.fit_transform(test_num))
-
-	if (transformer == 'dummies'):
-		test_cat_dummy = pd.get_dummies(test_cat)
-	else:
-		raise ValueError('Invalid option for the categorical test transformer')
+    if (transformer == 'no') or (transformer == None): 
+        pass
+    elif (transformer == 'dummies'):
+        data_cat = pd.get_dummies(data_cat)
+    else:
+        raise ValueError('Invalid option for the categorical transformer')
 
 
-	test_ = pd.concat([test_num_scaled, test_cat_dummy], axis=1, join='inner')
-
-	return test_
+    data_ = pd.concat([data_num, data_cat], axis=1, join='inner')
 
 
-
-def model_trial(data, labels, model):
-
-	X_train, X_test, y_train, y_test = train_test_split(data, labels,
-                            random_state=123, test_size=0.25, stratify=labels)
-
-	model.fit(X_train, y_train)
-	dict_ = {'train_score': model.score(X_train, y_train),
-			  'test_score': model.score(X_test, y_test)}
-
-	return dict_
+    return data_, value_num, value_cat
 
 
 
@@ -210,7 +184,7 @@ def load_model(name_model, PATH_DATA=PATH_DATA):
 
 
 def create_subfile_titanic(test_aligned, test_ids, model, name_model, PATH_DATA=PATH_DATA):
-	"""
+    """
     Creates a submission file ready for kaggle
     
     Parameters
@@ -226,31 +200,32 @@ def create_subfile_titanic(test_aligned, test_ids, model, name_model, PATH_DATA=
     - 1 if test_ids is not a list or a pandas series.
     """
 
-	model_loaded = load_model(name_model)
-	if (model_loaded == None):
-		predictions = model.predict(test_aligned)
-	else:
-		predictions = model_loaded.predict(test_aligned)
+    model_loaded = load_model(name_model)
+    if (model_loaded == None):
+        predictions = model.predict(test_aligned)
+    else:
+        predictions = model_loaded.predict(test_aligned)
 
-	if isinstance(test_ids, pd.Series):
-		submission = np.c_[test_ids.values, predictions]
-	elif isinstance(test_ids, (np.array, list)):
-		submission = np.c_[test_ids, predictions]
-	else:
-		raise TypeError('test_ids is not a valid type')
-		return 1
+    if isinstance(test_ids, pd.Series):
+        submission = np.c_[test_ids.values, predictions]
+    elif isinstance(test_ids, (np.array, list)):
+        submission = np.c_[test_ids, predictions]
+    else:
+        raise TypeError('test_ids is not a valid type')
+        return 1
 
-	pd.DataFrame(submission).to_csv(PATH_DATA / \
-		f"submission_{name_model}_titanic.csv", header=['PassengerId', 'Survived'],\
-		index=False)
-
-
-	return 0
+    pd.DataFrame(submission).to_csv(PATH_DATA / \
+        f"submission_{name_model}_titanic.csv", header=['PassengerId', 'Survived'],\
+        index=False)
 
 
+    return 0
 
 
-def try_model(X, y, model, name_model, random_state=100, print_score=True, dump_model='yes', PATH_DATA=PATH_DATA):
+
+
+def try_model(X, y, model, name_model, random_state=100, print_score=True, 
+    dump_model='yes', PATH_DATA=PATH_DATA, overwrite='no'):
     """
     Fits a sklearn model to X, y (or loads it if exists in PATH_DATA) and 
     prints the train and test score. It also saves it if "save_model" = 'yes'
@@ -274,7 +249,7 @@ def try_model(X, y, model, name_model, random_state=100, print_score=True, dump_
         model.fit(X_train, y_train)
         print(model)
         if (dump_model == 'yes'):
-            save_model(model, name_model)   
+            save_model(model, name_model, overwrite=overwrite)   
         if (print_score):
             print(f'model: {name_model}')
             print(f'train score: {model.score(X_train, y_train):.4f}\ntest score: {model.score(X_test, y_test):.4f}')
@@ -285,6 +260,56 @@ def try_model(X, y, model, name_model, random_state=100, print_score=True, dump_
             print(f'train score: {model_loaded.score(X_train, y_train):.4f}\ntest score: {model_loaded.score(X_test, y_test):.4f}')
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+###################################################################
+
+
+# WRONG!
+def test_preprocessing(test, value_num, value_cat, scaler=StandardScaler(), transformer='dummies'):
+
+    test_num, test_cat = get_features_by_type(test)
+
+    if not (value_num == None) or (value_num == 'no'):
+        test_num.fillna(value_num, inplace=True)
+        test_cat.fillna(value_cat, inplace=True)
+
+    test_num_scaled = pd.DataFrame(scaler.fit_transform(test_num))
+
+    if (transformer == 'dummies'):
+        test_cat_dummy = pd.get_dummies(test_cat)
+    else:
+        raise ValueError('Invalid option for the categorical test transformer')
+
+
+    test_ = pd.concat([test_num_scaled, test_cat_dummy], axis=1, join='inner')
+
+    return test_
+
+
+
+
+
+def model_trial(data, labels, model):
+
+    X_train, X_test, y_train, y_test = train_test_split(data, labels,
+                            random_state=123, test_size=0.25, stratify=labels)
+
+    model.fit(X_train, y_train)
+    dict_ = {'train_score': model.score(X_train, y_train),
+              'test_score': model.score(X_test, y_test)}
+
+    return dict_
 
 
 
@@ -318,6 +343,9 @@ def try_model_old(X, y, model, name_model, PATH_DATA, random_state=100, score=Tr
         if (score):
             print(f'model: {name_model}')
             print(f'train score: {model.score(X_train, y_train):.4f}\ntest score: {model.score(X_test, y_test):.4f}')
+
+
+
 
 
 
